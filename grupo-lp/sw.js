@@ -1,5 +1,5 @@
 /* Grupo LP – Simulador Empresarial · Service Worker (v5) */
-const CACHE = 'grupo-lp-v27';
+const CACHE = 'grupo-lp-v28';
 const APP_SHELL = [
   './',
   './index.html',
@@ -32,6 +32,7 @@ const APP_SHELL = [
   './v25.js',
   './v26.js',
   './v27.js',
+  './v28.js',
   './lp-icon-192.png',
   './lp-icon-512.png',
   './lp-icon-maskable-512.png',
@@ -98,21 +99,16 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Demais arquivos (.js, .css, imagens, manifest): cache primeiro, SEM ir à
-  // rede a cada carregamento. Só busca na rede quando o arquivo não está no
-  // cache — e aí guarda para as próximas visitas.
+  // Demais arquivos: rede primeiro (atualizações chegam sozinhas), cache quando offline.
   event.respondWith(
-    caches.match(request, { ignoreSearch: false }).then((cached) => {
-      if (cached) return cached;
-      return fetch(request)
-        .then((response) => {
-          if (guardavel(response)) {
-            const copy = response.clone();
-            caches.open(CACHE).then((cache) => cache.put(request, copy));
-          }
-          return response;
-        })
-        .catch(() => Response.error());
-    })
+    fetch(request)
+      .then((response) => {
+        if (guardavel(response)) {
+          const copy = response.clone();
+          caches.open(CACHE).then((cache) => cache.put(request, copy));
+        }
+        return response;
+      })
+      .catch(() => caches.match(request).then((c) => c || Response.error()))
   );
 });
