@@ -1,5 +1,5 @@
 /* Grupo LP – Simulador Empresarial · Service Worker (v5) */
-const CACHE = 'grupo-lp-v28';
+const CACHE = 'grupo-lp-v29';
 const APP_SHELL = [
   './',
   './index.html',
@@ -32,7 +32,7 @@ const APP_SHELL = [
   './v25.js',
   './v26.js',
   './v27.js',
-  './v28.js',
+  './v28.js','./v29.js',
   './lp-icon-192.png',
   './lp-icon-512.png',
   './lp-icon-maskable-512.png',
@@ -44,6 +44,7 @@ const APP_SHELL = [
   './icons/apple-touch-icon.png',
 ];
 
+
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches
@@ -53,6 +54,7 @@ self.addEventListener('install', (event) => {
   );
 });
 
+
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches
@@ -60,55 +62,3 @@ self.addEventListener('activate', (event) => {
       .then((keys) =>
         Promise.all(keys.filter((key) => key !== CACHE).map((key) => caches.delete(key)))
       )
-      .then(() => self.clients.claim())
-  );
-});
-
-// O app é um único index.html: navegações vão à rede primeiro, para que uma
-// versão nova chegue sozinha; o cache só entra quando offline.
-const isAppShell = (request, url) =>
-  request.mode === 'navigate' || url.pathname === '/' || url.pathname.endsWith('/index.html');
-
-const guardavel = (response) =>
-  response && response.status === 200 && response.type === 'basic';
-
-self.addEventListener('fetch', (event) => {
-  const { request } = event;
-  if (request.method !== 'GET') return;
-
-  const url = new URL(request.url);
-  if (url.origin !== self.location.origin) return;
-  if (url.pathname.startsWith('/api/')) return; // API de sincronização: sempre rede
-
-  if (isAppShell(request, url)) {
-    event.respondWith(
-      fetch(request)
-        .then((response) => {
-          if (guardavel(response)) {
-            const copy = response.clone();
-            caches.open(CACHE).then((cache) => cache.put('./index.html', copy));
-          }
-          return response;
-        })
-        .catch(() =>
-          caches
-            .match('./index.html')
-            .then((cached) => cached || caches.match('./') || Response.error())
-        )
-    );
-    return;
-  }
-
-  // Demais arquivos: rede primeiro (atualizações chegam sozinhas), cache quando offline.
-  event.respondWith(
-    fetch(request)
-      .then((response) => {
-        if (guardavel(response)) {
-          const copy = response.clone();
-          caches.open(CACHE).then((cache) => cache.put(request, copy));
-        }
-        return response;
-      })
-      .catch(() => caches.match(request).then((c) => c || Response.error()))
-  );
-});
