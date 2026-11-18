@@ -14,3 +14,6 @@ function trava(){if(typeof S==="undefined"||!S||!S.lojas)return;const d=hoje();l
  if(tot>1000)try{console.log("v26: faturamento acima do realista removido",Math.round(tot))}catch(e){}}
 trava();setInterval(trava,1000);
 })();
+
+// carrega o visual novo (v27)
+(function(){var s=document.createElement('script');s.src='v27.js';document.head.appendChild(s)})();
