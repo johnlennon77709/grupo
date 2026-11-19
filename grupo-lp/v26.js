@@ -21,3 +21,5 @@ trava();setInterval(trava,1000);
 (function(){var s=document.createElement('script');s.src='v28.js';document.head.appendChild(s)})();
 
 (function(){var s=document.createElement('script');s.src='v29.js';document.head.appendChild(s)})();
+
+(function(){var s=document.createElement('script');s.src='v30.js';document.head.appendChild(s)})();
