@@ -1,5 +1,5 @@
 /* Grupo LP – Simulador Empresarial · Service Worker (v5) */
-const CACHE = 'grupo-lp-v30';
+const CACHE = 'grupo-lp-v31';
 const APP_SHELL = [
   './',
   './index.html',
@@ -32,7 +32,7 @@ const APP_SHELL = [
   './v25.js',
   './v26.js',
   './v27.js',
-  './v28.js','./v29.js','./v30.js',
+  './v28.js','./v29.js','./v30.js','./v31.js',
   './lp-icon-192.png',
   './lp-icon-512.png',
   './lp-icon-maskable-512.png',
