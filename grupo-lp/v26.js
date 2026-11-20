@@ -1,4 +1,5 @@
-// v26: trava de faturamento diário real (R$ 5–22 mil por loja/dia) – vale para qualquer caminho de venda (produtos, troca de óleo, simulação offline)
+
+(function(){var s=document.createElement('script');s.src='v33.js';document.head.appendChild(s)})();// v26: trava de faturamento diário real (R$ 5–22 mil por loja/dia) – vale para qualquer caminho de venda (produtos, troca de óleo, simulação offline)
 (function(){const W=window;
 const hoje=()=>new Date(S.simMs).toDateString();
 function cap(l){if(l.tipo==="transp"||l.encerrada)return null;try{if(segDe(l)==="veic")return null}catch(e){}
