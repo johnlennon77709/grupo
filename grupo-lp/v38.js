@@ -1,10 +1,12 @@
 // v38: logística própria – o comprador monta os pedidos, o caminhão grande sai da base, passa fornecedor por fornecedor,
 // volta pra base, faz o transbordo pro caminhão pequeno e ele entrega loja por loja
 (function(){const W=window,H=36e5;
-const FCID={"Vibra (Lubrax)":"Porto Velho","Raízen (Shell)":"Porto Velho","Ipiranga":"Porto Velho","Petronas Lubrificantes":"Cuiabá","Moove (Mobil)":"Cuiabá","Tecfil / Sofape":"Cacoal","Votorantim Cimentos":"Porto Velho","Gerdau":"Porto Velho","Tigre":"Cuiabá","Suvinil":"Cuiabá","Distribuidora Norte Materiais":"Cacoal","Bosch Autopeças":"Cuiabá","Pirelli/Distribuidor":"Vilhena"};
-const cidF=n=>FCID[n]||Object.keys(CID)[[...n].reduce((a,c)=>a+c.charCodeAt(0),0)%Object.keys(CID).length];
-function km(a,b){const A=CID[a],B=CID[b];if(!A||!B||a===b)return 8;const R=6371,t=x=>x*Math.PI/180,dl=t(B.lat-A.lat),dn=t(B.lon-A.lon),h=Math.sin(dl/2)**2+Math.cos(t(A.lat))*Math.cos(t(B.lat))*Math.sin(dn/2)**2;return Math.round(2*R*Math.asin(Math.sqrt(h))*1.25)}
-const hrs=k=>k/65;
+const FCID={"Vibra (Lubrax)":["Duque de Caxias - RJ",-22.785,-43.311],"Raízen (Shell)":["Rio de Janeiro - RJ",-22.81,-43.20],"Ipiranga":["Rio de Janeiro - RJ",-22.88,-43.25],"Petronas Lubrificantes":["Contagem - MG",-19.93,-44.05],"Moove (Mobil)":["Rio de Janeiro - RJ",-22.86,-43.25],"Tecfil / Sofape":["Guarulhos - SP",-23.45,-46.53],"Votorantim Cimentos":["Porto Velho",-8.76,-63.90],"Gerdau":["Ouro Branco - MG",-20.52,-43.69],"Tigre":["Joinville - SC",-26.30,-48.85],"Suvinil":["São Bernardo do Campo - SP",-23.69,-46.56],"Distribuidora Norte Materiais":["Cacoal",-11.44,-61.45],"Bosch Autopeças":["Campinas - SP",-22.90,-47.06],"Pirelli/Distribuidor":["Campinas - SP",-22.90,-47.06]};
+const PT={};Object.values(FCID).forEach(([n,la,lo])=>PT[n]={lat:la,lon:lo});
+const cidF=n=>FCID[n]?FCID[n][0]:"São Paulo - SP";PT["São Paulo - SP"]={lat:-23.55,lon:-46.63};
+const pos=c=>CID[c]||PT[c];
+function km(a,b){const A=pos(a),B=pos(b);if(!A||!B||a===b)return 8;const R=6371,t=x=>x*Math.PI/180,dl=t(B.lat-A.lat),dn=t(B.lon-A.lon),h=Math.sin(dl/2)**2+Math.cos(t(A.lat))*Math.cos(t(B.lat))*Math.sin(dn/2)**2;return Math.round(2*R*Math.asin(Math.sqrt(h))*1.3)}
+const hrs=k=>k<=600?k/65:k/65*2.4; // viagem longa: motorista roda ~10h por dia
 function C(){if(!S.col)S.col={on:true,fila:[],rota:null,hist:[]};return S.col}
 function base(){const t=S.lojas.find(l=>l.tipo==="transp"&&!l.encerrada);return t?t.cid:S.lojas[0].cid}
 function livres(){return S.frota.filter(v=>v.status==="Garagem"&&!["implemento","carretinha","carro"].includes(v.tipo))}
@@ -46,7 +48,7 @@ function card(){const c=C(),r=c.rota;const g=r&&S.frota.find(v=>v.id===r.g),p=r&
  const hm=t=>new Date(t).toLocaleString("pt-BR",{day:"2-digit",hour:"2-digit",minute:"2-digit"});
  return `<div class="card"><h3>🔁 Logística própria (coleta nos fornecedores)</h3><div class="row sb" style="flex-wrap:wrap;gap:8px"><span class="muted">${c.on?"Ligada: o comprador monta os pedidos, o caminhão grande coleta nos fornecedores e o pequeno entrega nas lojas.":"Desligada: os fornecedores entregam direto nas lojas."}</span><button class="b ${c.on?"r":"g"}" onclick="togColeta()">${c.on?"Desligar":"Ligar"}</button></div>
  <p style="margin:8px 0">Pedidos aguardando coleta: <b>${c.fila.length}</b>${c.fila.length?` (${[...new Set(c.fila.map(x=>x.forn))].join(", ")})`:""}</p>
- ${r?`<p><b>${r.fase==="coleta"?"🚛 Coletando":"🚚 Entregando"}</b> – ${r.fase==="coleta"?(g?g.mod+" "+g.placa:""):(p?p.mod+" "+p.placa:"")}</p><div class="tw"><table><tr><th>Parada</th><th>Cidade</th><th>Previsão</th><th></th></tr>${r.par.map((s,i)=>`<tr><td>${esc(s.nome)}</td><td>${s.cid}</td><td>${hm(s.t)}</td><td>${i<r.i||S.simMs>=s.t?"✅":i===Math.max(0,r.i)?"🚚 a caminho":"⏳"}</td></tr>`).join("")}</table></div>`:`<p class="muted">Nenhuma rota em andamento. A rota sai entre 6h e 16h quando há 3+ pedidos ou o mais antigo espera 2h.</p>`}
+ ${r?`<p><b>${r.fase==="coleta"?"🚛 Coletando":"🚚 Entregando"}</b> – ${r.fase==="coleta"?(g?g.mod+" "+g.placa:""):(p?p.mod+" "+p.placa:"")}</p><div class="tw"><table><tr><th>Parada</th><th>Cidade</th><th>Previsão</th><th></th></tr>${r.par.map((s,i)=>`<tr><td>${esc(s.nome)}</td><td>${s.cid}</td><td>${hm(s.t)}</td><td>${i<r.i||S.simMs>=s.t?"✅":i===Math.max(0,r.i)?"🚚 a caminho":"⏳"}</td></tr>`).join("")}</table></div>`:`<p class="muted">Nenhuma rota em andamento. Fornecedores ficam nas fábricas reais (RJ, SP, MG, SC): viagens longas levam vários dias. A rota sai entre 6h e 16h quando há 3+ pedidos ou o mais antigo espera 2h.</p>`}
  ${c.hist.length?`<details><summary class="muted">Histórico</summary>${c.hist.slice(0,15).map(h=>`<div class="muted" style="font-size:12px">${hm(h.t)} · ${esc(h.x)}</div>`).join("")}</details>`:""}</div>`}
 let ok=false;setTimeout(()=>{if(ok)return;ok=true;["frota","estoque"].forEach(k=>{if(typeof V!=="undefined"&&V[k]){const o=V[k];V[k]=function(){return card()+o.apply(this,arguments)}}})},2500);
 })();
