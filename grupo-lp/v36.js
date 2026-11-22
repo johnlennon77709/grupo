@@ -1,0 +1,16 @@
+// v36: mais concessionárias e modelos (carros, SUVs, picapes, motos, caminhões)
+(function(){if(typeof DEALERS==="undefined")return;const add=(m,loja,cor,vend,itens)=>{const d=DEALERS.find(x=>x.m===m);if(d){itens.forEach(i=>{if(!d.itens.some(x=>x[0]===i[0]))d.itens.push(i)})}else DEALERS.push({m,loja,cor,vend,itens})};
+add("Porsche","Porsche Center – Cuiabá","#7c2d12","Sr. Augusto",[["718 Cayman","carro",0,559000],["Macan 4 Elétrico","carro",0,569000],["Cayenne E-Hybrid","carro",0,789000],["911 Carrera S","carro",0,1199000],["Taycan 4S","carro",0,899000],["Panamera 4","carro",0,939000]]);
+add("Jeep","Jeep Rondon – Porto Velho","#14532d","Sra. Carla",[["Renegade Longitude","carro",0,149990],["Compass Limited","carro",0,239990],["Commander Overland","carro",0,309990],["Gladiator Rubicon","pickup",.05,499990]]);
+add("Hyundai","Hyundai Caoa – Porto Velho","#1e40af","Sr. Diego",[["HB20 Platinum","carro",0,119990],["Creta Ultimate","carro",0,179990],["Tucson Hybrid","carro",0,289990],["HR 2.5 Diesel (baú)","pickup",.18,239990]]);
+add("Honda","Honda Amazônia – Porto Velho","#991b1b","Sra. Yumi",[["City Touring","carro",0,139990],["HR-V Touring","carro",0,199990],["ZR-V Touring","carro",0,229990],["Civic Type R","carro",0,439990],["CG 160 Titan (moto)","carro",0,19990],["XRE 300 Sahara (moto)","carro",0,33990]]);
+add("BYD","BYD Norte – Porto Velho","#0f766e","Sr. Lin",[["Dolphin Mini","carro",0,119800],["Dolphin GS","carro",0,149800],["Seal AWD","carro",0,299800],["Song Plus DM-i","carro",0,229800],["Shark Híbrida","pickup",.05,379800]]);
+add("Nissan","Nissan Rondon – Ji-Paraná","#334155","Sr. Rafael",[["Kicks Exclusive","carro",0,159990],["Sentra Exclusive","carro",0,169990],["Frontier PRO-4X","pickup",.06,309990]]);
+add("Volvo Cars","Volvo Cars Prime – Cuiabá","#1f2937","Sra. Helena",[["EX30 Ultra","carro",0,269950],["XC40 Ultimate","carro",0,319950],["XC60 Ultra T8","carro",0,459950],["XC90 Ultra T8","carro",0,689950]]);
+add("BMW • Mercedes","Premium Motors – Cuiabá","#0f172a","Sr. Otávio",[["BMW X1 sDrive20i","carro",0,329950],["BMW X5 xDrive50e","carro",0,749950],["Mercedes GLA 200","carro",0,339900],["Mercedes GLE 450","carro",0,829900],["BMW R 1300 GS (moto)","carro",0,149950]]);
+add("Ford • RAM • Mitsubishi","","","",[["Ranger Raptor","pickup",.05,459990],["Maverick Hybrid","pickup",.04,239990],["RAM 1500 Rebel","pickup",.06,549990],["RAM 3500 Laramie","pickup",.09,629990],["RAM Rampage R/T","pickup",.04,279990],["Mitsubishi Triton HPE-S","pickup",.06,299990]]);
+add("Scania","","","",[["P 280 4x2 (toco)","rigido",.6,640000],["G 450 6x2","cavalo",1,890000],["R 540 6x4 Highline","cavalo",1,1050000],["S 590 Super 6x4","cavalo",1,1190000]]);
+add("Volvo","","","",[["VM 290 6x2","rigido",.75,620000],["FH 460 6x2","cavalo",1,880000],["FH 540 6x4 Globetrotter","cavalo",1,1020000],["FH16 750 8x4","cavalo",1.2,1390000]]);
+add("Mercedes-Benz","","","",[["Actros 2553 6x2","cavalo",1,930000],["Actros 2653 6x4 Edição Ouro","cavalo",1,1080000]]);
+add("Implementos","","","",[["Randon Bitrem Graneleiro 7 eixos","implemento",1.7,410000],["Noma Rodotrem Basculante 9 eixos","implemento",2.1,590000],["Randon Baú Frigorífico 3 eixos","implemento",1,360000]]);
+})();
