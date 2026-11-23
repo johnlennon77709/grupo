@@ -1,0 +1,59 @@
+// v46: mapa ao vivo da frota + clientes fiéis + impostos e contador
+(function(){const W=window,H=36e5,D=864e5;const pk=a=>a[Math.random()*a.length|0],rnd=(a,b)=>a+Math.random()*(b-a);
+const NM=["Seu Antônio","Dona Maria","João da Hilux","Fazenda Boa Vista","Transportadora Rota Norte","Oficina do Zé","Construtora Alvorada","Dona Célia","Seu Raimundo","Agropecuária Paraíso","Marcos Taxista","Posto Avenida","Prefeitura","Seu Valdir","Cerâmica Rondônia","Pedro Caminhoneiro","Mecânica Irmãos","Fazenda Santa Luzia","Dona Francisca","Laticínio Vale"];
+// ===== 7) MAPA AO VIVO =====
+const PTS={"Porto Velho":[-8.76,-63.90],"Cacoal":[-11.44,-61.45],"Vilhena":[-12.74,-60.15],"Ji-Paraná":[-10.88,-61.95],"Ariquemes":[-9.91,-63.04],"Rio Branco":[-9.97,-67.81],"Cuiabá":[-15.60,-56.10],"Rondonópolis":[-16.47,-54.64],"Sinop":[-11.86,-55.50],"Sorriso":[-12.55,-55.71],"Lucas do Rio Verde":[-13.05,-55.91],"Campo Novo do Parecis":[-13.66,-57.89],"Manaus":[-3.12,-60.02],"Goiânia":[-16.68,-49.25],"Campo Grande":[-20.47,-54.62],"São Paulo":[-23.55,-46.63],"Campinas":[-22.90,-47.06],"Rio de Janeiro":[-22.91,-43.17],"Belo Horizonte":[-19.92,-43.94],"Curitiba":[-25.43,-49.27],"Paranaguá":[-25.52,-48.51],"Santos":[-23.96,-46.33],"Uberlândia":[-18.92,-48.28],"Brasília":[-15.79,-47.88],"Duque de Caxias - RJ":[-22.785,-43.311],"Rio de Janeiro - RJ":[-22.86,-43.25],"Contagem - MG":[-19.93,-44.05],"Guarulhos - SP":[-23.45,-46.53],"Ouro Branco - MG":[-20.52,-43.69],"Joinville - SC":[-26.30,-48.85],"São Bernardo do Campo - SP":[-23.69,-46.56],"Campinas - SP":[-22.90,-47.06],"São Paulo - SP":[-23.55,-46.63],"Juína":[-11.37,-58.75],"Brasnorte":[-12.16,-57.98]};
+function pt(c){if(PTS[c])return PTS[c];if(typeof CID!=="undefined"&&CID[c])return[CID[c].lat,CID[c].lon];return null}
+function base(){const t=S.lojas.find(l=>l.tipo==="transp"&&!l.encerrada);return t?t.cid:"Cacoal"}
+function posVeic(a){const i=Math.min(a.i,a.par.length-1);const prev=i>0?a.par[i-1]:{c:base(),t:a.t0||a.par[0].t-6*H,nome:base()};const nx=a.par[i];const A=pt(prev.c||prev.cid||base()),B=pt(nx.c||nx.cid);if(!A||!B)return null;
+ const t0=prev.t,t1=nx.t;let f=t1>t0?(S.simMs-t0)/(t1-t0):1;f=Math.max(0,Math.min(1,f));return[A[0]+(B[0]-A[0])*f,A[1]+(B[1]-A[1])*f,nx.c||nx.nome]}
+function mapa(){const vs=[];(S.fr&&S.fr.ativos||[]).forEach(a=>{const v=S.frota.find(x=>x.id===a.v);const p=posVeic(a);if(p)vs.push({p,v,txt:a.tipo==="frete"?a.c:"busca "+a.c,par:a.par})});
+ const r=S.col&&S.col.rota;if(r){const v=S.frota.find(x=>x.id===(r.fase==="coleta"?r.g:r.p));const p=posVeic(r);if(p)vs.push({p,v,txt:r.fase==="coleta"?"coleta nos fornecedores":"entregando nas lojas",par:r.par})}
+ const minhas=[...new Set(S.lojas.filter(l=>!l.encerrada).map(l=>l.cid))];const cs=new Set(minhas);vs.forEach(x=>x.par.forEach(p=>cs.add(p.c||p.cid)));cs.add(base());
+ const ps=[...cs].map(c=>[c,pt(c)]).filter(x=>x[1]);vs.forEach(x=>ps.push(["",[x.p[0],x.p[1]]]));if(!ps.length)return"";
+ let la0=Math.min(...ps.map(x=>x[1][0])),la1=Math.max(...ps.map(x=>x[1][0])),lo0=Math.min(...ps.map(x=>x[1][1])),lo1=Math.max(...ps.map(x=>x[1][1]));const pad=1.2;la0-=pad;la1+=pad;lo0-=pad;lo1+=pad;
+ const Wd=760,Hd=Math.max(260,Math.min(520,Wd*(la1-la0)/(lo1-lo0)));const X=lo=>(lo-lo0)/(lo1-lo0)*Wd,Y=la=>(la1-la)/(la1-la0)*Hd;
+ const linhas=vs.map(x=>{let pts=[pt(base())];x.par.forEach(p=>{const q=pt(p.c||p.cid);if(q)pts.push(q)});return `<polyline points="${pts.filter(Boolean).map(q=>X(q[1])+","+Y(q[0])).join(" ")}" fill="none" stroke="#f5b30155" stroke-width="2" stroke-dasharray="6 5"/>`}).join("");
+ const cid=[...cs].map(c=>{const q=pt(c);if(!q)return"";const m=minhas.includes(c);return `<circle cx="${X(q[1])}" cy="${Y(q[0])}" r="${m?5:3.5}" fill="${m?"#f5b301":"#64748b"}"/><text x="${X(q[1])+7}" y="${Y(q[0])+4}" font-size="11" fill="#cbd5e1">${esc(c)}</text>`}).join("");
+ const cam=vs.map(x=>`<g><circle cx="${X(x.p[1])}" cy="${Y(x.p[0])}" r="11" fill="#22c55e33"><animate attributeName="r" values="8;14;8" dur="1.6s" repeatCount="indefinite"/></circle><text x="${X(x.p[1])}" y="${Y(x.p[0])+5}" font-size="16" text-anchor="middle">🚛</text><text x="${X(x.p[1])}" y="${Y(x.p[0])-14}" font-size="10" text-anchor="middle" fill="#fff" style="paint-order:stroke;stroke:#000;stroke-width:3px">${esc(x.v?x.v.placa:"")} → ${esc(x.p[2]||"")}</text></g>`).join("");
+ return `<div class="card"><h3>🗺️ Mapa ao vivo da frota</h3><svg viewBox="0 0 ${Wd} ${Hd}" style="width:100%;background:radial-gradient(#132033,#0b1220);border-radius:12px">${linhas}${cid}${cam}</svg>
+ <div class="muted" style="font-size:12px;margin-top:6px">${vs.length?vs.map(x=>`🚛 <b>${esc(x.v?x.v.mod+" "+x.v.placa:"")}</b> – ${esc(x.txt)} → ${esc(x.p[2]||"")}`).join("<br>"):"Nenhum caminhão na estrada agora. Pegue um frete na lista abaixo."}</div></div>`}
+setInterval(()=>{if(typeof aba!=="undefined"&&aba==="frota"){const el=document.getElementById("v46map");if(el)el.innerHTML=mapa()}},3000);
+// ===== 8) CLIENTES FIÉIS =====
+function C(){if(!S.cf)S.cf=[];return S.cf}
+function lojasV(){return S.lojas.filter(l=>!l.encerrada&&l.tipo!=="transp")}
+function garante(){const c=C();lojasV().forEach(l=>{const n=c.filter(x=>x.loja===l.id&&!x.saiu).length;for(let i=n;i<4;i++)c.push({id:S.nid++,nome:pk(NM),loja:l.id,gasto:0,vis:0,sat:Math.round(rnd(60,90)),desde:S.simMs})})}
+if(typeof venda==="function"&&!venda.__v46){const o=venda;W.venda=function(l,v,...r){try{if(l&&l.id!=null&&Math.random()<.25){const cs=C().filter(x=>x.loja===l.id&&!x.saiu);if(cs.length){const x=pk(cs);x.gasto+=v;x.vis++;x.ult=S.simMs}}}catch(e){}return o.call(this,l,v,...r)};W.venda.__v46=1;for(const k in o)W.venda[k]=o[k]}
+function diaCli(){garante();const riv=S.riv||[];C().forEach(x=>{if(x.saiu)return;const l=S.lojas[x.loja];if(!l||l.encerrada){x.saiu=S.simMs;return}
+ const temRival=riv.some(r=>!r.fechou&&r.cid===l.cid);const semEst=Object.values(l.est||{}).filter(q=>q<=0).length>8;
+ x.sat=Math.max(0,Math.min(100,x.sat+(temRival?-3:0)+(semEst?-4:0)+(Math.random()<.5?1:-1)+(x.vis>5?1:0)));
+ if(x.sat<25&&Math.random()<.3){x.saiu=S.simMs;log(`😠 ${x.nome}, cliente fiel da ${nomeLoja(l)} (gastou ${R$(x.gasto)}), foi embora pra concorrência!`);toast(`😠 Cliente fiel ${x.nome} foi embora`)}
+ else if(x.sat<40&&!x.avisou){x.avisou=1;log(`⚠️ ${x.nome} está insatisfeito com a ${nomeLoja(l)}. Dê atenção antes que ele vá embora!`)}})}
+W.agrada=function(id,k){const x=C().find(y=>y.id===id);if(!x)return;const l=S.lojas[x.loja];const op={brinde:[150,15,"brinde"],desc:[600,25,"desconto especial"],visita:[0,10,"visita do gerente"]}[k];
+ S.ecx[l.emp]=(S.ecx[l.emp]||0)-op[0];x.sat=Math.min(100,x.sat+op[1]);x.avisou=0;log(`🎁 ${x.nome} recebeu ${op[2]} da ${nomeLoja(l)}`);toast(`${x.nome} ficou feliz! 😊`);render()};
+function cardCli(){garante();const cs=C().filter(x=>!x.saiu).sort((a,b)=>b.gasto-a.gasto);const sairam=C().filter(x=>x.saiu).length;
+ return `<div class="card"><h3>🤝 Clientes fiéis</h3><p class="muted" style="margin:0 0 8px">Clientes que voltam sempre. Concorrente na cidade ou falta de estoque deixam eles insatisfeitos, e abaixo de 25 eles vão embora. ${sairam?`Já perdeu <b>${sairam}</b>.`:""}</p>
+ <div class="tw"><table><tr><th>Cliente</th><th>Loja</th><th>Gastou</th><th>Visitas</th><th>Satisfação</th><th></th></tr>${cs.slice(0,25).map(x=>`<tr><td>${esc(x.nome)}</td><td>${esc(nomeLoja(S.lojas[x.loja]))}</td><td>${R$(x.gasto)}</td><td>${x.vis}</td><td><span style="color:${x.sat<40?"#f87171":x.sat<65?"#fbbf24":"#34d399"}">${x.sat<40?"😠":x.sat<65?"😐":"😊"} ${x.sat}</span></td><td><button class="b s" onclick="agrada(${x.id},'visita')" title="grátis">🤝</button><button class="b s" onclick="agrada(${x.id},'brinde')" title="R$ 150">🎁</button><button class="b s" onclick="agrada(${x.id},'desc')" title="R$ 600">💸</button></td></tr>`).join("")}</table></div>
+ <p class="muted" style="font-size:12px">🤝 visita do gerente (grátis, +10) · 🎁 brinde R$ 150 (+15) · 💸 desconto especial R$ 600 (+25)</p></div>`}
+// ===== 9) IMPOSTOS E CONTADOR =====
+const REG={simples:["Simples Nacional",f=>f<=180e3/12?.06:f<=360e3/12?.112:f<=720e3/12?.135:f<=1.8e6/12?.16:.21],presumido:["Lucro Presumido",()=>.1133],real:["Lucro Real",()=>.088]};
+function T(){if(!S.trib)S.trib={reg:{},cont:false,fat:{},hist:[]};return S.trib}
+if(typeof venda==="function"&&!venda.__v46b){const o=venda;W.venda=function(l,v,...r){try{if(l&&l.emp){const t=T(),m=new Date(S.simMs).toISOString().slice(0,7);t.fat[l.emp]=t.fat[l.emp]||{};t.fat[l.emp][m]=(t.fat[l.emp][m]||0)+v}}catch(e){}return o.call(this,l,v,...r)};W.venda.__v46b=1;W.venda.__v46=1;W.venda.__v45=1}
+function aliq(k,f){const t=T(),r=t.reg[k]||"presumido";let a=REG[r][1](f);if(r==="simples"&&f*12>4.8e6)a=.24;if(t.cont)a-=.012;return Math.max(.03,a)}
+function mesFecha(mAnt){const t=T();if(t.cont)addConta(`Honorários do contador ${mAnt}`,2500,S.simMs+5*D,"Serviços","Escritório Contábil Exato")}
+function ajusta(){const t=T();(S.contas||[]).forEach(c=>{if(c.v46||c.pago||!/^ICMS\/PIS\/COFINS/.test(c.desc||""))return;c.v46=1;const l=c.loja!=null?S.lojas[c.loja]:null;const k=l?l.emp:Object.keys(EMP)[0];
+ const f=c.v/.12,a=aliq(k,f*(l?1:1)),nv=Math.round(f*a);if(Math.abs(nv-c.v)<1)return;t.hist.unshift({k,f,v:nv,de:c.v});t.hist=t.hist.slice(0,40);
+ log(`🧾 ${c.desc}: ${(t.reg[k]||"presumido")==="simples"?"Simples":REG[t.reg[k]][0]} ${(a*100).toFixed(1)}% → ${R$(nv)} (antes ${R$(c.v)})`);c.v=nv})}
+setInterval(()=>{try{if(typeof S!=="undefined"&&S&&S.contas)ajusta()}catch(e){}},4000);
+W.setReg=function(k,r){T().reg[k]=r;log(`🧾 ${(EMP[k]||{}).n} mudou para ${REG[r][0]}`);save();render()};
+W.togCont=function(){const t=T();t.cont=!t.cont;log(t.cont?"🧮 Contador contratado (R$ 2.500/mês): impostos ~1,2 ponto menores e sugestão do melhor regime":"🧮 Contador dispensado");save();render()};
+function melhor(k,f){return Object.keys(REG).map(r=>{const t=T(),o=t.reg[k];t.reg[k]=r;const a=aliq(k,f);t.reg[k]=o;return[r,a]}).sort((a,b)=>a[1]-b[1])[0]}
+function cardImp(){const t=T(),m=new Date(S.simMs).toISOString().slice(0,7);const ks=Object.keys(EMP);
+ return `<div class="card"><h3>🧾 Impostos e contador</h3><div class="row sb" style="flex-wrap:wrap;gap:8px"><span class="muted">${t.cont?"🧮 Contador contratado: paga menos imposto e recebe sugestão do melhor regime.":"Sem contador: você paga a alíquota cheia e escolhe o regime sozinho."}</span><button class="b ${t.cont?"r":"g"}" onclick="togCont()">${t.cont?"Dispensar contador":"Contratar contador (R$ 2.500/mês)"}</button></div>
+ <div class="tw" style="margin-top:8px"><table><tr><th>Empresa</th><th>Faturado em ${m}</th><th>Regime</th><th>Alíquota</th><th>Imposto previsto</th>${t.cont?"<th>Contador sugere</th>":""}</tr>${ks.map(k=>{const f=(t.fat[k]||{})[m]||0,a=aliq(k,f),b=t.cont&&melhor(k,f);return `<tr><td>${esc(EMP[k].n)}</td><td>${R$(f)}</td><td><select onchange="setReg('${k}',this.value)">${Object.entries(REG).map(([r,x])=>`<option value="${r}" ${(t.reg[k]||"presumido")===r?"selected":""}>${x[0]}</option>`).join("")}</select></td><td>${(a*100).toFixed(1)}%</td><td>${R$(f*a)}</td>${t.cont?`<td>${REG[b[0]][0]} (${(b[1]*100).toFixed(1)}%)</td>`:""}</tr>`}).join("")}</table></div>
+ <p class="muted" style="font-size:12px">O ICMS/PIS/COFINS de cada loja que chega todo mês em 💳 Contas é recalculado pelo regime escolhido. Simples acima de R$ 4,8 mi/ano fica caro.</p></div>`}
+// ===== ciclo diário / mensal =====
+let dAnt=null,mAnt=null;setInterval(()=>{try{if(typeof S==="undefined"||!S||!S.simMs)return;const d=new Date(S.simMs),ds=d.toDateString(),ms=d.toISOString().slice(0,7);
+ if(dAnt&&ds!==dAnt)diaCli();if(mAnt&&ms!==mAnt)mesFecha(mAnt);dAnt=ds;mAnt=ms}catch(e){console.warn(e)}},3000);
+let ok=false;setTimeout(()=>{if(ok)return;ok=true;if(typeof V==="undefined")return;if(V.frota){const o=V.frota;V.frota=function(){return `<div id="v46map">${mapa()}</div>`+o.apply(this,arguments)}}if(V.painel){const o=V.painel;V.painel=function(){return o.apply(this,arguments)+cardCli()+cardImp()}}},3800);
+})();
