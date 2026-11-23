@@ -76,7 +76,7 @@ async function monta(){const L=await libs();prog(20,"montando o showroom");const
  box(WX,7,.4,parede,0,3.5,-DZ/2);box(.4,7,DZ,parede,-WX/2,3.5,0);box(.4,7,DZ,parede,WX/2,3.5,0);
  // fachada de vidro com montantes
  const vidro=new T.MeshPhysicalMaterial({color:0xcfe3f0,transmission:.9,roughness:.02,thickness:.1,transparent:true,opacity:.25,metalness:0});
- const fach=new T.Mesh(new T.PlaneGeometry(WX,7),vidro);fach.position.set(0,3.5,DZ/2);sc.add(fach);for(let x=-WX/2;x<=WX/2;x+=4)box(.12,7,.12,grafite,x,3.5,DZ/2);box(WX,.3,.3,grafite,0,7,DZ/2);
+ const fach=new T.Mesh(new T.PlaneGeometry(WX,7),vidro);fach.position.set(0,3.5,DZ/2);sc.add(fach);for(let x=-WX/2;x<=WX/2;x+=4)if(Math.abs(x)>3)box(.12,7,.12,grafite,x,3.5,DZ/2);box(WX,.3,.3,grafite,0,7,DZ/2);
  // teto com luminárias
  const teto=new T.Mesh(new T.PlaneGeometry(WX,DZ),new T.MeshStandardMaterial({color:0xffffff,roughness:.9}));teto.rotation.x=Math.PI/2;teto.position.y=7;sc.add(teto);
  const lum=new T.MeshStandardMaterial({color:0xffffff,emissive:0xffffff,emissiveIntensity:2});
@@ -108,18 +108,18 @@ async function monta(){const L=await libs();prog(20,"montando o showroom");const
   const cor=new T.MeshPhysicalMaterial({color:cores[i%cores.length],metalness:1,roughness:.45,clearcoat:1,clearcoatRoughness:.03});
   m.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;if(o.name==="body"||/body/i.test(o.material&&o.material.name||""))o.material=cor;if(o.name==="glass"||/glass/i.test(o.name))o.material=new T.MeshPhysicalMaterial({color:0xffffff,metalness:.25,roughness:0,transmission:1})}});
   m.position.set(cx,.18,cz);m.rotation.y=-.6+i*.35;sc.add(m);
-  const pl=placa(`${it[0]}  ·  ${R$(it[3])}`,"#ffffff","#0b0f14",15,1);pl.position.set(cx,.75,cz+3.6);pl.rotation.x=-.5;sc.add(pl);
+  const pl=placa(`${it[0]}  ·  ${R$(it[3])}`,"#ffffff","#0b0f14",5.5,1);pl.position.set(cx,.45,cz+3.6);pl.rotation.x=-.9;sc.add(pl);
   const totem=box(.9,1.1,.12,grafite,cx+2.8,.55,cz+2.2);totem.rotation.y=-.6;
   G.carros.push({it,idx:G.d.itens.indexOf(it),pos:new T.Vector3(cx,0,cz),m,cor})});
  // pessoas
  const mkBot=(corpo,junta)=>{const o=L.SK.clone(bot.scene);o.traverse(c=>{if(c.isMesh){c.castShadow=true;c.material=c.material.clone();if(/Body/i.test(c.material.name))c.material.color.set(corpo);if(/Joints/i.test(c.material.name))c.material.color.set(junta)}});
   const mx=new T.AnimationMixer(o);const a={};bot.animations.forEach(cl=>{a[cl.name]=mx.clipAction(cl)});sc.add(o);return{o,mx,a,cur:null}};
  const play=(p,n)=>{if(p.cur===n)return;const nx=p.a[n];if(!nx)return;nx.reset().fadeIn(.25).play();if(p.cur&&p.a[p.cur])p.a[p.cur].fadeOut(.25);p.cur=n};G.play=play;
- const P=mkBot(0x2b4a7a,0xf0c9a0);P.o.position.set(0,0,DZ/2+3);P.o.rotation.y=Math.PI;play(P,"idle");G.P=P;G.player=P.o;
- const Vd=mkBot(0x14161a,0xffffff);Vd.o.position.set(-WX/2+5,0,-DZ/2+4.4);play(Vd,"idle");G.V=Vd;G.vend=Vd.o;
+ const P=mkBot(0x2b4a7a,0xf0c9a0);P.o.position.set(0,0,DZ/2-2.5);P.o.rotation.y=Math.PI;play(P,"idle");G.P=P;G.player=P.o;
+ const Vd=mkBot(0x14161a,0xffffff);Vd.o.position.set(-6,0,DZ/2-6);play(Vd,"idle");G.V=Vd;G.vend=Vd.o;
  // clientes passeando
  G.npcs=[];for(let i=0;i<3;i++){const c=mkBot([0x7c2d12,0x166534,0x6b21a8][i],0xd9a77a);c.o.position.set(-10+i*9,0,8-i*3);play(c,"walk");c.alvo=null;G.npcs.push(c)}
- G.WX=WX;G.DZ=DZ;G.clock=new T.Clock();G.camYaw=Math.PI;G.camPitch=.35;G.camDist=6;G.camModo=0;
+ G.WX=WX;G.DZ=DZ;G.clock=new T.Clock();G.camYaw=0;G.camPitch=.35;G.camDist=4.5;G.camModo=0;
  // controles de câmera
  let drag=null;ren.domElement.addEventListener("pointerdown",e=>{if(e.pointerType==="touch"&&e.clientX<innerWidth*.45&&e.clientY>innerHeight*.5)return;drag=[e.clientX,e.clientY,G.camYaw,G.camPitch]});
  addEventListener("pointermove",e=>{if(!drag||!G)return;G.camYaw=drag[2]-(e.clientX-drag[0])*.006;G.camPitch=Math.max(.05,Math.min(1.2,drag[3]+(e.clientY-drag[1])*.004))});addEventListener("pointerup",()=>drag=null);
@@ -144,10 +144,10 @@ function lerpA(a,b,t){let d=((b-a+Math.PI)%(2*Math.PI))-Math.PI;if(d<-Math.PI)d+
 function colide(v){const lim=[G.WX/2-.6,G.DZ/2+8];v.x=Math.max(-lim[0],Math.min(lim[0],v.x));v.z=Math.max(-G.DZ/2+.6,Math.min(lim[1],v.z));
  if(v.z<G.DZ/2&&v.z>G.DZ/2-.5&&Math.abs(v.x)>3){v.z=v.z>G.DZ/2-.25?G.DZ/2:G.DZ/2-.5} // porta central aberta
  G.carros.forEach(c=>{const dx=v.x-c.pos.x,dz=v.z-c.pos.z,d=Math.hypot(dx,dz);if(d<2.6){v.x=c.pos.x+dx/d*2.6;v.z=c.pos.z+dz/d*2.6}})}
-function loop(){if(!G||!G.vivo)return;requestAnimationFrame(loop);const {T}=G.L;const dt=Math.min(.05,G.clock.getDelta());
+function loop(){if(!G||!G.vivo)return;requestAnimationFrame(loop);const {T}=G.L;const dt=Math.min(.1,G.clock.getDelta());
  // jogador
  let ix=0,iz=0;const k=G.keys;if(k.w||k.arrowup)iz-=1;if(k.s||k.arrowdown)iz+=1;if(k.a||k.arrowleft)ix-=1;if(k.d||k.arrowright)ix+=1;ix+=G.jx||0;iz+=G.jz||0;
- const P=G.P,o=P.o;if(!G.falando&&(ix||iz)){const corre=k.shift||Math.hypot(G.jx||0,G.jz||0)>.95;const sp=corre?4.2:1.7;const ang=Math.atan2(ix,iz)+G.camYaw+Math.PI;const nv=new T.Vector3(o.position.x+Math.sin(ang)*sp*dt,0,o.position.z+Math.cos(ang)*sp*dt);colide(nv);o.position.copy(nv);o.rotation.y=lerpA(o.rotation.y,ang,Math.min(1,dt*10));G.play(P,corre?"run":"walk")}else G.play(P,"idle");
+ const P=G.P,o=P.o;if(!G.falando&&(ix||iz)){const corre=k.shift||Math.hypot(G.jx||0,G.jz||0)>.95;const sp=corre?4.2:1.7;const ang=Math.atan2(ix,iz)+G.camYaw;const nv=new T.Vector3(o.position.x+Math.sin(ang)*sp*dt,0,o.position.z+Math.cos(ang)*sp*dt);colide(nv);o.position.copy(nv);o.rotation.y=lerpA(o.rotation.y,ang,Math.min(1,dt*10));G.play(P,corre?"run":"walk")}else G.play(P,"idle");
  // vendedor
  const V=G.V;if(G.estado==="vindo"){const alvo=o.position.clone().add(new T.Vector3(Math.sin(o.rotation.y)*1.6,0,Math.cos(o.rotation.y)*1.6));if(anda(V,alvo,1.9,dt)||V.o.position.distanceTo(o.position)<1.8){G.estado="falando";V.o.lookAt(o.position.x,0,o.position.z);G.play(V,"idle");saudacao()}}
  else if(G.estado==="levando"){const c=G.carros[G.alvoCar];const alvo={x:c.pos.x+3.3,z:c.pos.z+.8};if(anda(V,alvo,1.5,dt)){V.o.lookAt(c.pos.x,0,c.pos.z);if(o.position.distanceTo(V.o.position)<2.8){G.estado="nocarro";noCarro()}}}
