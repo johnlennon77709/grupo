@@ -10,8 +10,10 @@ function km(a,b){const A=ll(a),B=ll(b);if(!A||!B||a===b)return 8;const t=x=>x*Ma
 const hrs=k=>k<=600?k/65:k/65*2.4;
 const MT=["Cuiabá","Campo Novo do Parecis","Juína","Brasnorte","Sinop","Sorriso","Lucas do Rio Verde","Rondonópolis","Várzea Grande","Tangará da Serra","Primavera do Leste","Cáceres","Barra do Garças"],AC=["Rio Branco","Cruzeiro do Sul","Sena Madureira","Tarauacá","Feijó"];
 const uf=c=>{if(typeof CID!=="undefined"&&CID[c]&&CID[c].uf)return CID[c].uf;return MT.includes(c)?"MT":AC.includes(c)?"AC":"RO"};
-const reg=l=>{const u=uf(l.cid);return u==="MT"?"cui":u==="AC"?"acre":"cac"};
 const CDN={cac:"CD Cacoal",cui:"CD Cuiabá"},CDC={cac:"Cacoal",cui:"Cuiabá"};
+function extras(){return (S.lg&&S.lg.cdx||[])}
+function syncCD(){extras().forEach(c=>{const k="x"+c.cid;CDN[k]="CD "+c.cid;CDC[k]=c.cid;if(S.lg&&S.lg.cd&&!S.lg.cd[k])S.lg.cd[k]=[]})}
+const reg=l=>{const u=uf(l.cid);if(u==="AC")return"acre";let k=u==="MT"?"cui":"cac",d=km(l.cid,CDC[k]);extras().forEach(c=>{const e=km(l.cid,c.cid);if(e<=450&&e<d){d=e;k="x"+c.cid}});return k};
 const hm=t=>new Date(t).toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"});
 const hh=t=>new Date(t).toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"});
 const dia=t=>new Date(t).toLocaleDateString("pt-BR");
@@ -40,13 +42,14 @@ const ocup=()=>new Set(G().rotas.map(r=>r.v));
 function livres(){const o=ocup();return S.frota.filter(v=>v.status==="Garagem"&&!o.has(v.id)&&!["implemento","carretinha","carro"].includes(v.tipo))}
 function ordem(ini,lista,cidDe){const out=[],rest=lista.slice();let cur=ini;while(rest.length){rest.sort((a,b)=>km(cur,cidDe(a))-km(cur,cidDe(b)));const x=rest.shift();out.push(x);cur=cidDe(x)}return out}
 function monta(stops,ini){let t=S.simMs,cur=ini;return stops.map(s=>{const d=km(cur,s.cid);t+=hrs(d)*H;const o=Object.assign({},s,{c:s.cid,t,km:d});t+=(s.par||.6)*H;cur=s.cid;return o})}
-function saiColeta(){const g=G();if(!g.fila.length)return;const h=new Date(S.simMs).getHours();if(h<6||h>16)return;
+function saiColeta(){const g=G();syncCD();if(!g.fila.length)return;const h=new Date(S.simMs).getHours();if(h<6||h>16)return;
  const lv=livres().sort((a,b)=>(b.cap||0)-(a.cap||0));const velho=Math.min(...g.fila.map(p=>p.desde||S.simMs));
  if(!lv.length){if(S.simMs-velho>2*D){g.fila.splice(0).forEach(p=>{p.chega=S.simMs+D;p.v24=1;p.v38d=1;S.compras.push(p)});H_("⚠️ Sem caminhão livre há 2 dias: fornecedores vão entregar direto nas lojas")}return}
  if(g.fila.length<2&&S.simMs-velho<3*H)return;
  const v=lv[0],b=base(),carga=g.fila.splice(0);const forns=ordem(b,[...new Set(carga.map(p=>p.forn))],cidF);
  const st=forns.map(f=>({tipo:"forn",nome:f,cid:cidF(f),par:1}));
- if(carga.some(p=>S.lojas[p.loja]&&reg(S.lojas[p.loja])==="cui"))st.push({tipo:"cd",cd:"cui",nome:CDN.cui,cid:"Cuiabá",par:1.5});
+ const ks=[...new Set(carga.filter(p=>S.lojas[p.loja]).map(p=>reg(S.lojas[p.loja])))].filter(k=>k!=="cac"&&k!=="acre");
+ ordem(st.length?st[st.length-1].cid:b,ks,k=>CDC[k]).forEach(k=>st.push({tipo:"cd",cd:k,nome:CDN[k],cid:CDC[k],par:1.5}));
  const acre=[...new Set(carga.filter(p=>S.lojas[p.loja]&&reg(S.lojas[p.loja])==="acre").map(p=>p.loja))];
  ordem(st.length?st[st.length-1].cid:b,acre.map(i=>S.lojas[i]),l=>l.cid).forEach(l=>st.push({tipo:"loja",loja:l.id,nome:nl(l.id),cid:l.cid,par:1}));
  st.push({tipo:"cd",cd:"cac",nome:CDN.cac,cid:"Cacoal",par:1,fim:1});
@@ -55,11 +58,11 @@ function saiColeta(){const g=G();if(!g.fila.length)return;const h=new Date(S.sim
 function saiDist(cd){const g=G(),q=g.cd[cd];if(!q.length)return;const h=new Date(S.simMs).getHours();if(h<6||h>16)return;
  const lv=livres().sort((a,b)=>(a.cap||0)-(b.cap||0));if(!lv.length){const velho=Math.min(...q.map(p=>p.noCD||S.simMs));if(S.simMs-velho>2*D){q.splice(0).forEach(p=>{p.chega=S.simMs+6*H;p.v24=1;p.v38d=1;S.compras.push(p)});H_(`⚠️ ${CDN[cd]} sem caminhão livre há 2 dias: transportadora terceirizada vai entregar`)}return}
  const v=lv.find(x=>x.tipo==="rigido"||x.tipo==="pickup")||lv[0],b=base(),carga=q.splice(0);const st=[];
- if(cd==="cui")st.push({tipo:"pega",nome:CDN.cui+" (carregar)",cid:"Cuiabá",par:1.5});
- const ls=[...new Set(carga.map(p=>p.loja))].map(i=>S.lojas[i]).filter(Boolean);ordem(st.length?"Cuiabá":CDC[cd],ls,l=>l.cid).forEach(l=>st.push({tipo:"loja",loja:l.id,nome:nl(l.id),cid:l.cid,par:.6}));
+ if(cd!=="cac")st.push({tipo:"pega",nome:CDN[cd]+" (carregar)",cid:CDC[cd],par:1.5});
+ const ls=[...new Set(carga.map(p=>p.loja))].map(i=>S.lojas[i]).filter(Boolean);ordem(CDC[cd],ls,l=>l.cid).forEach(l=>st.push({tipo:"loja",loja:l.id,nome:nl(l.id),cid:l.cid,par:.6}));
  st.push({tipo:"fim",nome:"Base "+b,cid:b,par:0});
- const r={id:S.nid++,k:"dist",cd,v:v.id,carga,par:monta(st,cd==="cac"?"Cacoal":b),i:0,c:cd==="cui"?"buscar no CD Cuiabá e entregar":"entregas a partir do CD Cacoal"};g.rotas.push(r);v.status="Entregando";
- H_(`🚚 ${v.mod} ${v.placa} saiu ${cd==="cui"?"de "+b+" para buscar mercadoria no CD Cuiabá":"do CD Cacoal"} – entregas: ${ls.map(l=>nl(l.id)).join(" → ")}`)}
+ const r={id:S.nid++,k:"dist",cd,v:v.id,carga,par:monta(st,cd==="cac"?"Cacoal":b),i:0,c:cd!=="cac"?"buscar no "+CDN[cd]+" e entregar":"entregas a partir do CD Cacoal"};g.rotas.push(r);v.status="Entregando";
+ H_(`🚚 ${v.mod} ${v.placa} saiu ${cd!=="cac"?"de "+b+" para buscar mercadoria no "+CDN[cd]:"do CD Cacoal"} – entregas: ${ls.map(l=>nl(l.id)).join(" → ")}`)}
 function entrega(r,s,v){const l=S.lojas[s.loja];if(!l)return;const ps=r.carga.filter(p=>p.loja===s.loja&&!p.ok);let un=0,val=0;
  ps.forEach(p=>{p.ok=1;val+=p.tot||0;p.itens.forEach(([i,q])=>{l.est[i]=(l.est[i]||0)+q;un+=q})});if(ps.length)H_(`✅ ${v?v.placa:""} entregou em ${nl(l.id)}: ${ps.length} pedido(s), ${un.toLocaleString("pt-BR")} un. (${R$(val)})`)}
 function anda(){const g=G();g.rotas.slice().forEach(r=>{const v=S.frota.find(x=>x.id===r.v);
@@ -69,7 +72,7 @@ function anda(){const g=G();g.rotas.slice().forEach(r=>{const v=S.frota.find(x=>
   else if(s.tipo==="cd"){const ps=r.carga.filter(p=>!p.ok&&!p.noCD&&S.lojas[p.loja]&&reg(S.lojas[p.loja])===s.cd);ps.forEach(p=>{p.noCD=S.simMs;g.cd[s.cd].push(p)});
    if(ps.length)H_(`🏬 ${v.placa} descarregou ${ps.length} pedido(s) no ${s.nome} (lojas: ${[...new Set(ps.map(p=>nl(p.loja)))].join(", ")})`);
    if(s.fim){r.carga.filter(p=>!p.ok&&!p.noCD).forEach(p=>{p.noCD=S.simMs;g.cd.cac.push(p)});v.status="Garagem";H_(`🏁 ${v.mod} ${v.placa} chegou no CD Cacoal. Coleta concluída`);g.rotas.splice(g.rotas.indexOf(r),1);return}}
-  else if(s.tipo==="pega")H_(`📥 ${v.placa} carregou no CD Cuiabá`);
+  else if(s.tipo==="pega")H_(`📥 ${v.placa} carregou no ${s.nome.replace(" (carregar)","")}`);
   else if(s.tipo==="loja")entrega(r,s,v);
   else if(s.tipo==="fim"){v.status="Garagem";H_(`🏠 ${v.mod} ${v.placa} voltou pra base`);g.rotas.splice(g.rotas.indexOf(r),1);return}
   r.i++}})}
@@ -105,7 +108,7 @@ function cardLog(){const g=G();const tot=g.fila.reduce((a,p)=>a+(p.tot||0),0);
  const lin=r=>{const v=S.frota.find(x=>x.id===r.v);const s=r.par[Math.min(r.i,r.par.length-1)];return `<tr><td>${r.k==="coleta"?"🚛 Coleta":"🚚 Entrega"}</td><td>${v?esc(v.mod)+" "+v.placa:""}</td><td>${esc(s.nome)} (${s.cid})</td><td>${hm(s.t)}</td></tr>`};
  return `<div class="card"><h3>🔁 Logística: fornecedores → CDs → lojas</h3>
  <p class="muted" style="font-size:13px">O comprador fecha pedidos grandes (R$ 100 mil a R$ 1 mi). O caminhão grande coleta nos fornecedores, deixa a carga de MT no <b>CD Cuiabá</b>, entrega o <b>Acre direto</b> e descarrega o resto no <b>CD Cacoal</b>. Outros caminhões levam dos CDs para as lojas.</p>
- <div class="row" style="gap:14px;flex-wrap:wrap;margin:6px 0"><span>Pedidos aguardando coleta: <b>${g.fila.length}</b> (${R$(tot)})</span><span>CD Cacoal: <b>${g.cd.cac.length}</b> pedido(s)</span><span>CD Cuiabá: <b>${g.cd.cui.length}</b> pedido(s)</span></div>
+ <div class="row" style="gap:14px;flex-wrap:wrap;margin:6px 0"><span>Pedidos aguardando coleta: <b>${g.fila.length}</b> (${R$(tot)})</span>${Object.keys(g.cd).map(k=>`<span>${CDN[k]||k}: <b>${g.cd[k].length}</b> pedido(s)</span>`).join("")}</div>
  ${g.rotas.length?`<div class="tw"><table><tr><th>Viagem</th><th>Caminhão</th><th>Próxima parada</th><th>Chega</th></tr>${g.rotas.map(lin).join("")}</table></div>`:`<p class="muted">Nenhum caminhão em rota de logística agora.</p>`}
  ${g.hist.length?`<details><summary class="muted">Histórico</summary>${g.hist.slice(0,25).map(h=>`<div class="muted" style="font-size:12px">${hm(h.t)} · ${esc(h.x)}</div>`).join("")}</details>`:""}</div>`}
 function lojasAt(){return S.lojas.filter(l=>!l.encerrada)}
@@ -127,6 +130,7 @@ V.relat=function(){const g=G();const s=sel("v52lojaR"),id=lojaSel52;const rr=g.r
  <div class="row" style="gap:18px;flex-wrap:wrap;margin:6px 0"><div>🔓 Abriu (1ª venda)<br><b>${r.ab?hh(r.ab):"—"}</b></div><div>🔒 Fechou (última venda)<br><b>${r.fe?hh(r.fe):"—"}</b></div><div>🧾 Vendas<br><b>${r.n}</b></div><div>💰 Faturamento<br><b>${R$(r.v)}</b></div><div>🎯 Ticket médio<br><b>${R$(r.n?r.v/r.n:0)}</b></div><div>🏦 Caixa agora<br><b>${R$((S.lcx||{})[id]||0)}</b></div></div>
  <div style="display:flex;align-items:flex-end;gap:3px;height:110px;margin-top:12px">${horas.map(i=>`<div title="${i}h: ${R$(r.h[i]||0)}" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%"><div style="width:100%;background:#f5b301;border-radius:3px 3px 0 0;height:${Math.round((r.h[i]||0)/mx*90)}px"></div><div class="muted" style="font-size:10px">${i}</div></div>`).join("")}</div></div>
  <div class="card"><h3>🕒 Tudo o que aconteceu (${r.ev.length})</h3>${r.ev.length?r.ev.slice().reverse().map(([t,x])=>`<div style="font-size:13px;padding:4px 0;border-bottom:1px solid #ffffff10"><span class="muted">${hh(t)}</span> · ${esc(x)}</div>`).join(""):`<p class="muted">Nenhum evento registrado.</p>`}</div>`};
+W.v52api={km,reg,CDN,CDC,syncCD};
 // ---------------- instalação ----------------
 let inst=false;function instala(){if(inst||typeof ABAS==="undefined"||typeof V==="undefined")return;inst=true;
  ABAS.equip=["🧰","Equipamentos"];ABAS.relat=["📑","Relatórios"];if(ABAS.loja)ABAS.loja[1]="Lojas";
@@ -135,5 +139,5 @@ function limpa(){document.querySelectorAll("h3").forEach(h=>{if(/^🔁 Logístic
  const cv=document.querySelector("main canvas, #main canvas, canvas");if(cv&&typeof aba!=="undefined"&&aba==="loja"){let c=cv.closest(".card");if(c&&!c.__v52){c.__v52=1;c.style.display="none"}}}
 setTimeout(()=>{instala();try{render()}catch(e){}},8500);
 setInterval(()=>{try{if(typeof S!=="undefined"&&S&&S.frota)puxa()}catch(e){}},100);
-setInterval(()=>{try{if(typeof S==="undefined"||!S||!S.frota)return;puxa();saiColeta();saiDist("cac");saiDist("cui");anda();pedeEquip();limpa()}catch(e){console.warn("v52",e)}},700);
+setInterval(()=>{try{if(typeof S==="undefined"||!S||!S.frota)return;puxa();syncCD();saiColeta();Object.keys(G().cd).forEach(saiDist);anda();pedeEquip();limpa()}catch(e){console.warn("v52",e)}},700);
 })();
