@@ -13,7 +13,7 @@ const uf=c=>{if(typeof CID!=="undefined"&&CID[c]&&CID[c].uf)return CID[c].uf;ret
 const CDN={cac:"CD Cacoal",cui:"CD Cuiabá"},CDC={cac:"Cacoal",cui:"Cuiabá"};
 function extras(){return (S.lg&&S.lg.cdx||[])}
 function syncCD(){extras().forEach(c=>{const k="x"+c.cid;CDN[k]="CD "+c.cid;CDC[k]=c.cid;if(S.lg&&S.lg.cd&&!S.lg.cd[k])S.lg.cd[k]=[]})}
-const reg=l=>{const u=uf(l.cid);if(u==="AC")return"acre";let k=u==="MT"?"cui":"cac",d=km(l.cid,CDC[k]);extras().forEach(c=>{const e=km(l.cid,c.cid);if(e<=450&&e<d){d=e;k="x"+c.cid}});return k};
+const reg=l=>{const u=uf(l.cid);let k=u==="MT"?"cui":"cac",d=km(l.cid,CDC[k]);extras().forEach(c=>{const e=km(l.cid,c.cid);if(e<=450&&e<d){d=e;k="x"+c.cid}});return k};
 const hm=t=>new Date(t).toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"});
 const hh=t=>new Date(t).toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"});
 const dia=t=>new Date(t).toLocaleDateString("pt-BR");
@@ -67,7 +67,7 @@ function entrega(r,s,v){const l=S.lojas[s.loja];if(!l)return;const ps=r.carga.fi
  ps.forEach(p=>{p.ok=1;val+=p.tot||0;p.itens.forEach(([i,q])=>{l.est[i]=(l.est[i]||0)+q;un+=q})});if(ps.length)H_(`✅ ${v?v.placa:""} entregou em ${nl(l.id)}: ${ps.length} pedido(s), ${un.toLocaleString("pt-BR")} un. (${R$(val)})`)}
 function anda(){const g=G();g.rotas.slice().forEach(r=>{const v=S.frota.find(x=>x.id===r.v);
  if(!v){r.carga.filter(p=>!p.ok&&!p.noCD).forEach(p=>{p.chega=S.simMs+D;p.v24=1;p.v38d=1;S.compras.push(p)});g.rotas.splice(g.rotas.indexOf(r),1);return}
- while(r.i<r.par.length&&S.simMs>=r.par[r.i].t){const s=r.par[r.i];
+ while(!r.pausa&&r.i<r.par.length&&S.simMs>=r.par[r.i].t){const s=r.par[r.i];if(s.tipo==="decide"){r.pausa=1;H_(`⏸️ ${v.placa} chegou em Porto Velho com carga pro Acre. Decida na aba Frota: seguir pra Rio Branco ou deixar no depósito.`);return}
   if(s.tipo==="forn"){const n=r.carga.filter(p=>p.forn===s.nome).length;H_(`📦 ${v.placa} carregou ${n} pedido(s) na ${s.nome} (${s.cid})`)}
   else if(s.tipo==="cd"){const ps=r.carga.filter(p=>!p.ok&&!p.noCD&&S.lojas[p.loja]&&reg(S.lojas[p.loja])===s.cd);ps.forEach(p=>{p.noCD=S.simMs;g.cd[s.cd].push(p)});
    if(ps.length)H_(`🏬 ${v.placa} descarregou ${ps.length} pedido(s) no ${s.nome} (lojas: ${[...new Set(ps.map(p=>nl(p.loja)))].join(", ")})`);
@@ -130,7 +130,7 @@ V.relat=function(){const g=G();const s=sel("v52lojaR"),id=lojaSel52;const rr=g.r
  <div class="row" style="gap:18px;flex-wrap:wrap;margin:6px 0"><div>🔓 Abriu (1ª venda)<br><b>${r.ab?hh(r.ab):"—"}</b></div><div>🔒 Fechou (última venda)<br><b>${r.fe?hh(r.fe):"—"}</b></div><div>🧾 Vendas<br><b>${r.n}</b></div><div>💰 Faturamento<br><b>${R$(r.v)}</b></div><div>🎯 Ticket médio<br><b>${R$(r.n?r.v/r.n:0)}</b></div><div>🏦 Caixa agora<br><b>${R$((S.lcx||{})[id]||0)}</b></div></div>
  <div style="display:flex;align-items:flex-end;gap:3px;height:110px;margin-top:12px">${horas.map(i=>`<div title="${i}h: ${R$(r.h[i]||0)}" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%"><div style="width:100%;background:#f5b301;border-radius:3px 3px 0 0;height:${Math.round((r.h[i]||0)/mx*90)}px"></div><div class="muted" style="font-size:10px">${i}</div></div>`).join("")}</div></div>
  <div class="card"><h3>🕒 Tudo o que aconteceu (${r.ev.length})</h3>${r.ev.length?r.ev.slice().reverse().map(([t,x])=>`<div style="font-size:13px;padding:4px 0;border-bottom:1px solid #ffffff10"><span class="muted">${hh(t)}</span> · ${esc(x)}</div>`).join(""):`<p class="muted">Nenhum evento registrado.</p>`}</div>`};
-W.v52api={km,reg,CDN,CDC,syncCD};
+W.v52api={km,reg,CDN,CDC,syncCD,G,monta,livres,ordem,nl,H_,base};
 // ---------------- instalação ----------------
 let inst=false;function instala(){if(inst||typeof ABAS==="undefined"||typeof V==="undefined")return;inst=true;
  ABAS.equip=["🧰","Equipamentos"];ABAS.relat=["📑","Relatórios"];if(ABAS.loja)ABAS.loja[1]="Lojas";
@@ -139,5 +139,5 @@ function limpa(){document.querySelectorAll("h3").forEach(h=>{if(/^🔁 Logístic
  const cv=document.querySelector("main canvas, #main canvas, canvas");if(cv&&typeof aba!=="undefined"&&aba==="loja"){let c=cv.closest(".card");if(c&&!c.__v52){c.__v52=1;c.style.display="none"}}}
 setTimeout(()=>{instala();try{render()}catch(e){}},8500);
 setInterval(()=>{try{if(typeof S!=="undefined"&&S&&S.frota)puxa()}catch(e){}},100);
-setInterval(()=>{try{if(typeof S==="undefined"||!S||!S.frota)return;puxa();syncCD();saiColeta();Object.keys(G().cd).forEach(saiDist);anda();pedeEquip();limpa()}catch(e){console.warn("v52",e)}},700);
+setInterval(()=>{try{if(typeof S==="undefined"||!S||!S.frota)return;puxa();syncCD();saiColeta();anda();pedeEquip();limpa()}catch(e){console.warn("v52",e)}},700);
 })();
