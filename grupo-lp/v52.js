@@ -33,7 +33,7 @@ function engorda(p){if(p.v52)return;p.v52=1;const g=G();
  const igual=g.fila.find(x=>x!==p&&x.loja===p.loja&&x.forn===p.forn);if(igual){p.itens.forEach(([i,q])=>{const e=igual.itens.find(z=>z[0]===i);if(e)e[1]+=q;else igual.itens.push([i,q])});igual.tot=(igual.tot||0)+(p.tot||0);p.__fund=1;return}
  g.big=g.big||{};const bk=p.loja+"|"+p.forn;if(g.big[bk]&&S.simMs-g.big[bk]<7*D)return;g.big[bk]=S.simMs;
  const alvo=Math.round((100000+Math.pow(Math.random(),2)*900000)/1000)*1000;const tot0=p.itens.reduce((a,[i,q])=>a+custo(i)*q,0)||p.tot||1;
- if(tot0<alvo){const f=alvo/tot0;p.itens=p.itens.map(([i,q])=>[i,Math.max(q,Math.ceil(q*f))]);const novo=p.itens.reduce((a,[i,q])=>a+custo(i)*q,0);const extra=Math.max(0,novo-(p.tot||0));
+ if(tot0>=300&&tot0<alvo){const f=alvo/tot0;p.itens=p.itens.map(([i,q])=>[i,Math.max(q,Math.ceil(q*f))]);const novo=p.itens.reduce((a,[i,q])=>a+custo(i)*q,0);const extra=Math.max(0,novo-(p.tot||0));
   if(extra>0){try{addConta(`Pedido grande ${p.forn} – ${nl(p.loja)}`,extra,S.simMs+30*D,"Fornecedores",p.forn);S.contas[S.contas.length-1].loja=p.loja}catch(e){}}p.tot=(p.tot||0)+extra}
  const un=p.itens.reduce((a,x)=>a+x[1],0);H_(`🧾 ${p.por||"Comprador"} fechou pedido grande com ${p.forn} para ${nl(p.loja)}: ${p.itens.length} produtos, ${un.toLocaleString("pt-BR")} un. – ${R$(p.tot)}`)}
 function puxa(){if(!S.col||!S.col.fila||!S.col.fila.length)return;const g=G();const xs=S.col.fila.splice(0);const velhos=!g.ini;g.ini=1;xs.forEach(p=>{p.desde=p.desde||S.simMs;if(velhos)p.v52=1;g.fila.push(p);engorda(p)});g.fila=g.fila.filter(p=>!p.__fund)}
